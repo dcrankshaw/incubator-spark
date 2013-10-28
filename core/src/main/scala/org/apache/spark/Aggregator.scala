@@ -17,8 +17,13 @@
 
 package org.apache.spark
 
+<<<<<<< HEAD
 import org.apache.spark.util.AppendOnlyMap
 import org.apache.spark.util.collection.{HashMap, OpenHashMap,PrimitiveKeyOpenHashMap}
+=======
+//import org.apache.spark.util.AppendOnlyMap
+import org.apache.spark.util.hash.{OpenHashMap,PrimitiveKeyOpenHashMap}
+>>>>>>> Initial work on integrating in new hashset
 
 /**
  * A set of functions used to aggregate data.
@@ -65,6 +70,7 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
   }
 
   def combineCombinersByKey(iter: Iterator[(K, C)]) : Iterator[(K, C)] = {
+<<<<<<< HEAD
     //val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
     val combiners: HashMap[K, C] = {
       val mk = classManifest[K]
@@ -79,6 +85,10 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
       }
     }
 
+=======
+    //val combiners = new AppendOnlyMap[K, C]
+    val combiners = new OpenHashMap[K, C]
+>>>>>>> Initial work on integrating in new hashset
     var kc: (K, C) = null
     val update = (oldValue: C) => {
       mergeCombiners(oldValue, kc._2)
