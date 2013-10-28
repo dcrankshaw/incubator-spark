@@ -18,6 +18,7 @@
 package org.apache.spark
 
 import org.apache.spark.util.AppendOnlyMap
+import org.apache.spark.util.collection.{HashMap, OpenHashMap,PrimitiveKeyOpenHashMap}
 
 /**
  * A set of functions used to aggregate data.
@@ -26,35 +27,49 @@ import org.apache.spark.util.AppendOnlyMap
  * @param mergeValue function to merge a new value into the aggregation result.
  * @param mergeCombiners function to merge outputs from multiple mergeValue function.
  */
-case class Aggregator[K, V, C] (
+
+case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
     createCombiner: V => C,
     mergeValue: (C, V) => C,
     mergeCombiners: (C, C) => C) {
 
   def combineValuesByKey(iter: Iterator[_ <: Product2[K, V]]) : Iterator[(K, C)] = {
-    val combiners = new AppendOnlyMap[K, C]
+    val combiners: HashMap[K, C] = createHashMap
     var kv: Product2[K, V] = null
-    val update = (hadValue: Boolean, oldValue: C) => {
-      if (hadValue) mergeValue(oldValue, kv._2) else createCombiner(kv._2)
+    val update = (oldValue: C) => {
+      mergeValue(oldValue, kv._2)
     }
     while (iter.hasNext) {
       kv = iter.next()
-      combiners.changeValue(kv._1, update)
+      combiners.changeValue(kv._1, createCombiner(kv._2), update)
     }
     combiners.iterator
   }
 
   def combineCombinersByKey(iter: Iterator[(K, C)]) : Iterator[(K, C)] = {
-    val combiners = new AppendOnlyMap[K, C]
+    val combiners: HashMap[K, C] = createHashMap
     var kc: (K, C) = null
-    val update = (hadValue: Boolean, oldValue: C) => {
-      if (hadValue) mergeCombiners(oldValue, kc._2) else kc._2
+    val update = (oldValue: C) => {
+      mergeCombiners(oldValue, kc._2)
     }
     while (iter.hasNext) {
       kc = iter.next()
-      combiners.changeValue(kc._1, update)
+      combiners.changeValue(kc._1, kc._2, update)
     }
     combiners.iterator
+  }
+
+  def createHashMap: HashMap[K, C] = {
+    val mk = classManifest[K]
+    if (mk >:> classManifest[Null]) {
+      (new OpenHashMap[AnyRef, C]).asInstanceOf[HashMap[K, C]]
+    } else if (mk == classManifest[Long]) {
+      (new PrimitiveKeyOpenHashMap[Long, C]).asInstanceOf[HashMap[K, C]]
+    } else if (mk == classManifest[Int]) {
+      (new PrimitiveKeyOpenHashMap[Int, C]).asInstanceOf[HashMap[K, C]]
+    } else {
+      (new AppendOnlyMap[K, C]).asInstanceOf[HashMap[K, C]]
+    }
   }
 }
 

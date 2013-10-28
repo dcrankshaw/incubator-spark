@@ -24,6 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.{InterruptibleIterator, Partition, Partitioner, SparkEnv, TaskContext}
 import org.apache.spark.{Dependency, OneToOneDependency, ShuffleDependency}
 import org.apache.spark.util.AppendOnlyMap
+import org.apache.spark.util.collection.{HashMap, OpenHashMap, PrimitiveKeyOpenHashMap}
 
 
 private[spark] sealed trait CoGroupSplitDep extends Serializable
@@ -59,7 +60,7 @@ class CoGroupPartition(idx: Int, val deps: Array[CoGroupSplitDep])
  * @param rdds parent RDDs.
  * @param part partitioner used to partition the shuffle output.
  */
-class CoGroupedRDD[K](@transient var rdds: Seq[RDD[_ <: Product2[K, _]]], part: Partitioner)
+class CoGroupedRDD[K: ClassManifest](@transient var rdds: Seq[RDD[_ <: Product2[K, _]]], part: Partitioner)
   extends RDD[(K, Seq[Seq[_]])](rdds.head.context, Nil) {
 
   private var serializerClass: String = null
@@ -104,14 +105,23 @@ class CoGroupedRDD[K](@transient var rdds: Seq[RDD[_ <: Product2[K, _]]], part: 
     val split = s.asInstanceOf[CoGroupPartition]
     val numRdds = split.deps.size
     // e.g. for `(k, a) cogroup (k, b)`, K -> Seq(ArrayBuffer as, ArrayBuffer bs)
-    val map = new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
-
-    val update: (Boolean, Seq[ArrayBuffer[Any]]) => Seq[ArrayBuffer[Any]] = (hadVal, oldVal) => {
-      if (hadVal) oldVal else Array.fill(numRdds)(new ArrayBuffer[Any])
+    val map: HashMap[K,Seq[ArrayBuffer[Any]]] = {
+      val mk = classManifest[K]
+      if (mk >:> classManifest[Null]) {
+        (new OpenHashMap[AnyRef, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      } else if (mk == classManifest[Long]) {
+        (new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      } else if (mk == classManifest[Int]) {
+        (new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      } else {
+        (new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      }
     }
 
+    val update: (Seq[ArrayBuffer[Any]]) => Seq[ArrayBuffer[Any]] = (oldVal) => { oldVal }
+
     val getSeq = (k: K) => {
-      map.changeValue(k, update)
+      map.changeValue(k, Array.fill(numRdds)(new ArrayBuffer[Any]), update)
     }
 
     val ser = SparkEnv.get.serializerManager.get(serializerClass)
