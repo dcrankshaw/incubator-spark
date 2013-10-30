@@ -106,7 +106,25 @@ class CoGroupedRDD[K: ClassManifest](@transient var rdds: Seq[RDD[_ <: Product2[
     val numRdds = split.deps.size
     // e.g. for `(k, a) cogroup (k, b)`, K -> Seq(ArrayBuffer as, ArrayBuffer bs)
     //val map = new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
-    val map = new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
+    
+    val map = {
+      val mk = classManifest[K]
+      if (mk >:> classManifest[Null]) {
+        new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
+      } else if (mk == classManifest[Long]) {
+        new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]
+      } else if (mk == classManifest[Int]) {
+        new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]
+      }
+    }
+      
+
+
+
+
+
+
+    //val map = new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
 
     val update: (Seq[ArrayBuffer[Any]]) => Seq[ArrayBuffer[Any]] = (oldVal) => { oldVal }
 
