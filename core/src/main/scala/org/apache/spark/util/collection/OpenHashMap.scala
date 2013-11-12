@@ -28,8 +28,9 @@ package org.apache.spark.util.collection
 private[spark]
 class OpenHashMap[K >: Null : ClassManifest, @specialized(Long, Int, Double) V: ClassManifest](
     initialCapacity: Int)
-  extends Iterable[(K, V)]
-  with Serializable {
+  //extends Iterable[(K, V)]
+  //with Serializable, HashMap[K, V] {
+  extends HashMap[K, V] {
 
   def this() = this(64)
 
