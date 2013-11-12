@@ -17,13 +17,8 @@
 
 package org.apache.spark
 
-<<<<<<< HEAD
 import org.apache.spark.util.AppendOnlyMap
 import org.apache.spark.util.collection.{HashMap, OpenHashMap,PrimitiveKeyOpenHashMap}
-=======
-//import org.apache.spark.util.AppendOnlyMap
-import org.apache.spark.util.hash.{OpenHashMap,PrimitiveKeyOpenHashMap}
->>>>>>> Initial work on integrating in new hashset
 
 /**
  * A set of functions used to aggregate data.
