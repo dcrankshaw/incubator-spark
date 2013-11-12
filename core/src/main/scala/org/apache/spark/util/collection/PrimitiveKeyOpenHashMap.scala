@@ -29,8 +29,9 @@ private[spark]
 class PrimitiveKeyOpenHashMap[@specialized(Long, Int) K: ClassManifest,
                               @specialized(Long, Int, Double) V: ClassManifest](
     initialCapacity: Int)
-  extends Iterable[(K, V)]
-  with Serializable {
+  //extends Iterable[(K, V)]
+  //with Serializable {
+  extends HashMap[K, V] {
 
   def this() = this(64)
 

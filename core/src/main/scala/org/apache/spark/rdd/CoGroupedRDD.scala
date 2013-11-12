@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.{InterruptibleIterator, Partition, Partitioner, SparkEnv, TaskContext}
 import org.apache.spark.{Dependency, OneToOneDependency, ShuffleDependency}
 //import org.apache.spark.util.AppendOnlyMap
-import org.apache.spark.util.hash.{OpenHashMap, PrimitiveKeyOpenHashMap}
+import org.apache.spark.util.hash.{HashMap, OpenHashMap, PrimitiveKeyOpenHashMap}
 
 
 private[spark] sealed trait CoGroupSplitDep extends Serializable
@@ -107,15 +107,17 @@ class CoGroupedRDD[K: ClassManifest](@transient var rdds: Seq[RDD[_ <: Product2[
     // e.g. for `(k, a) cogroup (k, b)`, K -> Seq(ArrayBuffer as, ArrayBuffer bs)
     //val map = new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
     
-    val map = {
+    val map: HashMap[K,Seq[ArrayBuffer[Any]]] = {
       val mk = classManifest[K]
       if (mk >:> classManifest[Null]) {
-        new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
+        (new OpenHashMap[K, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
       } else if (mk == classManifest[Long]) {
-        new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]
+        (new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
       } else if (mk == classManifest[Int]) {
-        new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]
-      }
+        (new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      } else {
+        (new Append
+
     }
       
 
