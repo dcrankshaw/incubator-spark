@@ -23,13 +23,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.{InterruptibleIterator, Partition, Partitioner, SparkEnv, TaskContext}
 import org.apache.spark.{Dependency, OneToOneDependency, ShuffleDependency}
-<<<<<<< HEAD
 import org.apache.spark.util.AppendOnlyMap
 import org.apache.spark.util.collection.{HashMap, OpenHashMap, PrimitiveKeyOpenHashMap}
-=======
-//import org.apache.spark.util.AppendOnlyMap
-import org.apache.spark.util.hash.{HashMap, OpenHashMap, PrimitiveKeyOpenHashMap}
->>>>>>> Added hashmap.
 
 
 private[spark] sealed trait CoGroupSplitDep extends Serializable
