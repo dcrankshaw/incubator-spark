@@ -1,5 +1,5 @@
 
-package org.apache.spark.util.hash
+package org.apache.spark.util.collection
 
 import scala.collection.mutable.HashSet
 import org.scalatest.FunSuite

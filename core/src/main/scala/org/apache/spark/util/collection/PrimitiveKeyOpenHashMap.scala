@@ -61,7 +61,7 @@ class PrimitiveKeyOpenHashMap[@specialized(Long, Int) K: ClassManifest,
   }
 
   /** Set the value for a key */
-  def update(k: K, v: V) {
+  override def update(k: K, v: V) {
     val pos = _keySet.addWithoutResize(k) & OpenHashSet.POSITION_MASK
     _values(pos) = v
     _keySet.rehashIfNeeded(k, grow, move)
@@ -74,7 +74,7 @@ class PrimitiveKeyOpenHashMap[@specialized(Long, Int) K: ClassManifest,
    *
    * @return the newly updated value.
    */
-  def changeValue(k: K, defaultValue: => V, mergeValue: (V) => V): V = {
+  override def changeValue(k: K, defaultValue: => V, mergeValue: (V) => V): V = {
     val pos = _keySet.addWithoutResize(k)
     if ((pos & OpenHashSet.NONEXISTENCE_MASK) != 0) {
       val newValue = defaultValue

@@ -1,4 +1,4 @@
-package org.apache.spark.util.hash
+package org.apache.spark.util.collection
 
 
 private[spark]

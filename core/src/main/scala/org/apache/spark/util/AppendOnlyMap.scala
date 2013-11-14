@@ -17,6 +17,8 @@
 
 package org.apache.spark.util
 
+import org.apache.spark.util.collection.HashMap
+
 /**
  * A simple open hash table optimized for the append-only use case, where keys
  * are never removed, but the value for each key may be changed.
@@ -28,7 +30,8 @@ package org.apache.spark.util
  * TODO: Cache the hash values of each key? java.util.HashMap does that.
  */
 private[spark]
-class AppendOnlyMap[K, V](initialCapacity: Int = 64) extends Iterable[(K, V)] with Serializable {
+class AppendOnlyMap[K, V](initialCapacity: Int = 64) extends HashMap[K, V] {
+//extends Iterable[(K, V)] with Serializable {
   require(initialCapacity <= (1 << 29), "Can't make capacity bigger than 2^29 elements")
   require(initialCapacity >= 1, "Invalid initial capacity")
 
@@ -70,7 +73,7 @@ class AppendOnlyMap[K, V](initialCapacity: Int = 64) extends Iterable[(K, V)] wi
   }
 
   /** Set the value for a key */
-  def update(key: K, value: V): Unit = {
+  override def update(key: K, value: V): Unit = {
     val k = key.asInstanceOf[AnyRef]
     if (k.eq(null)) {
       if (!haveNullValue) {
@@ -85,6 +88,17 @@ class AppendOnlyMap[K, V](initialCapacity: Int = 64) extends Iterable[(K, V)] wi
       incrementSize()
     }
   }
+
+  override def changeValue(key: K, defaultValue: => V, mergeValue: (V) => V): V = {
+    val updateFunc = (hadValue: Boolean, oldValue: V) => {
+      if (hadValue)
+        mergeValue(oldValue)
+      else
+        defaultValue
+    }
+    changeValue(key, updateFunc)
+  }
+
 
   /**
    * Set the value for key to updateFunc(hadValue, oldValue), where oldValue will be the old value
