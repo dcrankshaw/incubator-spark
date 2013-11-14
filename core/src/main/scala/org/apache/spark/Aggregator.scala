@@ -17,8 +17,8 @@
 
 package org.apache.spark
 
-//import org.apache.spark.util.AppendOnlyMap
-import org.apache.spark.util.hash.{OpenHashMap,PrimitiveKeyOpenHashMap}
+import org.apache.spark.util.AppendOnlyMap
+import org.apache.spark.util.collection.{HashMap, OpenHashMap,PrimitiveKeyOpenHashMap}
 
 /**
  * A set of functions used to aggregate data.
@@ -37,8 +37,8 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
     mergeCombiners: (C, C) => C) {
 
   def combineValuesByKey(iter: Iterator[_ <: Product2[K, V]]) : Iterator[(K, C)] = {
-    //val combiners = new AppendOnlyMap[K, C]
-    val combiners = new OpenHashMap[K, C]
+    val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
+    //val combiners = new OpenHashMap[K, C]
     var kv: Product2[K, V] = null
     val update = (oldValue: C) => {
       mergeValue(oldValue, kv._2)
@@ -51,8 +51,8 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
   }
 
   def combineCombinersByKey(iter: Iterator[(K, C)]) : Iterator[(K, C)] = {
-    //val combiners = new AppendOnlyMap[K, C]
-    val combiners = new OpenHashMap[K, C]
+    val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
+    //val combiners = new OpenHashMap[K, C]
     var kc: (K, C) = null
     val update = (oldValue: C) => {
       mergeCombiners(oldValue, kc._2)

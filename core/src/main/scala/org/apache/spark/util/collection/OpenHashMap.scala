@@ -64,7 +64,7 @@ class OpenHashMap[K >: Null : ClassManifest, @specialized(Long, Int, Double) V: 
   }
 
   /** Set the value for a key */
-  def update(k: K, v: V) {
+  override def update(k: K, v: V) {
     if (k == null) {
       haveNullValue = true
       nullValue = v
@@ -82,7 +82,7 @@ class OpenHashMap[K >: Null : ClassManifest, @specialized(Long, Int, Double) V: 
    *
    * @return the newly updated value.
    */
-  def changeValue(k: K, defaultValue: => V, mergeValue: (V) => V): V = {
+  override def changeValue(k: K, defaultValue: => V, mergeValue: (V) => V): V = {
     if (k == null) {
       if (haveNullValue) {
         nullValue = mergeValue(nullValue)
