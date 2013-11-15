@@ -42,7 +42,7 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
     val combiners: HashMap[K, C] = {
       val mk = classManifest[K]
       if (mk >:> classManifest[Null]) {
-        (new OpenHashMap[K, C]).asInstanceOf[HashMap[K, C]]
+        (new OpenHashMap[AnyRef, C]).asInstanceOf[HashMap[K, C]]
       } else if (mk == classManifest[Long]) {
         (new PrimitiveKeyOpenHashMap[Long, C]).asInstanceOf[HashMap[K, C]]
       } else if (mk == classManifest[Int]) {
@@ -69,7 +69,7 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
     val combiners: HashMap[K, C] = {
       val mk = classManifest[K]
       if (mk >:> classManifest[Null]) {
-        (new OpenHashMap[K, C]).asInstanceOf[HashMap[K, C]]
+        (new OpenHashMap[AnyRef, C]).asInstanceOf[HashMap[K, C]]
       } else if (mk == classManifest[Long]) {
         (new PrimitiveKeyOpenHashMap[Long, C]).asInstanceOf[HashMap[K, C]]
       } else if (mk == classManifest[Int]) {
