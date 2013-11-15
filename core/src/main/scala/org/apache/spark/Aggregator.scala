@@ -37,8 +37,22 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
     mergeCombiners: (C, C) => C) {
 
   def combineValuesByKey(iter: Iterator[_ <: Product2[K, V]]) : Iterator[(K, C)] = {
-    val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
-    //val combiners = new OpenHashMap[K, C]
+
+
+    val combiners: HashMap[K, C] = {
+      val mk = classManifest[K]
+      if (mk >:> classManifest[Null]) {
+        (new OpenHashMap[K, C]).asInstanceOf[HashMap[K, C]]
+      } else if (mk == classManifest[Long]) {
+        (new PrimitiveKeyOpenHashMap[Long, C]).asInstanceOf[HashMap[K, C]]
+      } else if (mk == classManifest[Int]) {
+        (new PrimitiveKeyOpenHashMap[Int, C]).asInstanceOf[HashMap[K, C]]
+      } else {
+        (new AppendOnlyMap[K, C]).asInstanceOf[HashMap[K, C]]
+      }
+    }
+
+    //val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
     var kv: Product2[K, V] = null
     val update = (oldValue: C) => {
       mergeValue(oldValue, kv._2)
@@ -51,8 +65,20 @@ case class Aggregator[K: ClassManifest, V, C: ClassManifest] (
   }
 
   def combineCombinersByKey(iter: Iterator[(K, C)]) : Iterator[(K, C)] = {
-    val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
-    //val combiners = new OpenHashMap[K, C]
+    //val combiners: HashMap[K, C] = new AppendOnlyMap[K, C]
+    val combiners: HashMap[K, C] = {
+      val mk = classManifest[K]
+      if (mk >:> classManifest[Null]) {
+        (new OpenHashMap[K, C]).asInstanceOf[HashMap[K, C]]
+      } else if (mk == classManifest[Long]) {
+        (new PrimitiveKeyOpenHashMap[Long, C]).asInstanceOf[HashMap[K, C]]
+      } else if (mk == classManifest[Int]) {
+        (new PrimitiveKeyOpenHashMap[Int, C]).asInstanceOf[HashMap[K, C]]
+      } else {
+        (new AppendOnlyMap[K, C]).asInstanceOf[HashMap[K, C]]
+      }
+    }
+
     var kc: (K, C) = null
     val update = (oldValue: C) => {
       mergeCombiners(oldValue, kc._2)

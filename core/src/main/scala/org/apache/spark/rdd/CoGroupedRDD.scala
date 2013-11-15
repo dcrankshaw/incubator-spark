@@ -105,28 +105,44 @@ class CoGroupedRDD[K: ClassManifest](@transient var rdds: Seq[RDD[_ <: Product2[
     val split = s.asInstanceOf[CoGroupPartition]
     val numRdds = split.deps.size
     // e.g. for `(k, a) cogroup (k, b)`, K -> Seq(ArrayBuffer as, ArrayBuffer bs)
-    val map: HashMap[K, Seq[ArrayBuffer[Any]]]  = new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
+    //val map: HashMap[K, Seq[ArrayBuffer[Any]]]  = new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
+    val R = classManifest[K].erasure.asInstanceOf[Class[Null]]
     
-    //val map: HashMap[K,Seq[ArrayBuffer[Any]]] = {
-    //  val mk = classManifest[K]
-    //  if (mk >:> classManifest[Null]) {
-    //    (new OpenHashMap[K, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
-    //  } else if (mk == classManifest[Long]) {
-    //    (new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
-    //  } else if (mk == classManifest[Int]) {
-    //    (new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
-    //  } else {
-    //    (new Append
+    val map: HashMap[K,Seq[ArrayBuffer[Any]]] = {
+      val mk = classManifest[K]
+      if (mk >:> classManifest[Null]) {
+        new OpenHashMap[R, Seq[ArrayBuffer[Any]]]
+      } else if (mk == classManifest[Long]) {
+        (new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      } else if (mk == classManifest[Int]) {
+        (new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      } else {
+        (new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+      }
+    }
 
+
+    //val mk = classManifest[K]
+    //val instanceK = mk.erasure.newInstance
+    //val classK = mk.erasure.asInstanceOf[Class[K]]
+    //val map: HashMap[K,Seq[ArrayBuffer[Any]]] = instanceK match {
+    //  case k: classK >: Null => new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
+    //  case _ => new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
     //}
-      
 
 
 
-
-
-
-    //val map = new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
+    //val CML = classManifest[Long]
+    //val CMI = classManifest[Int]
+    ////val CMN = classManifest[K] >:> classManifest[Null]
+    //val map: HashMap[K,Seq[ArrayBuffer[Any]]] = classManifest[K] match {
+    //  
+    //  case k: K >: Null => new OpenHashMap[K, Seq[ArrayBuffer[Any]]]
+    //  //case k if classManifest[k] >:> classManifest[Null] => new OpenHashMap[k, Seq[ArrayBuffer[Any]]]
+    //  case CML => (new PrimitiveKeyOpenHashMap[Long, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+    //  case CMI => (new PrimitiveKeyOpenHashMap[Int, Seq[ArrayBuffer[Any]]]).asInstanceOf[HashMap[K,Seq[ArrayBuffer[Any]]]]
+    //  case _ => new AppendOnlyMap[K, Seq[ArrayBuffer[Any]]]
+    //}
 
     val update: (Seq[ArrayBuffer[Any]]) => Seq[ArrayBuffer[Any]] = (oldVal) => { oldVal }
 
